@@ -17,8 +17,25 @@ const getProducts = asyncHandler(async (req, res) => {
       }
     : {};
 
-  const count = await Product.countDocuments({ ...keyword });
-  const products = await Product.find({ ...keyword })
+  const category = req.query.category ? { category: req.query.category } : {};
+  const brand = req.query.brand ? { brand: req.query.brand } : {};
+
+  let sortOption = {};
+  if (req.query.sort === 'lowest') {
+    sortOption = { price: 1 };
+  } else if (req.query.sort === 'highest') {
+    sortOption = { price: -1 };
+  } else if (req.query.sort === 'toprated') {
+    sortOption = { rating: -1 };
+  } else {
+    sortOption = { createdAt: -1 };
+  }
+
+  const queryFilters = { ...keyword, ...category, ...brand };
+
+  const count = await Product.countDocuments(queryFilters);
+  const products = await Product.find(queryFilters)
+    .sort(sortOption)
     .limit(pageSize)
     .skip(pageSize * (page - 1));
 
@@ -154,6 +171,15 @@ const getTopProducts = asyncHandler(async (req, res) => {
   res.json(products);
 });
 
+// @desc    Get filters (categories, brands)
+// @route   GET /api/products/filters
+// @access  Public
+const getFilters = asyncHandler(async (req, res) => {
+  const categories = await Product.find().distinct('category');
+  const brands = await Product.find().distinct('brand');
+  res.json({ categories, brands });
+});
+
 export {
   getProducts,
   getProductById,
@@ -162,4 +188,5 @@ export {
   deleteProduct,
   createProductReview,
   getTopProducts,
+  getFilters,
 };
