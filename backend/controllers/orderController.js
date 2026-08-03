@@ -3,6 +3,7 @@ import Order from '../models/orderModel.js';
 import Product from '../models/productModel.js';
 import { calcPrices } from '../utils/calcPrices.js';
 import { verifyPayPalPayment, checkIfNewTransaction } from '../utils/paypal.js';
+import sendEmail from '../utils/sendEmail.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -102,7 +103,7 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
     }
   }
 
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id).populate('user', 'name email');
 
   if (order) {
     order.isPaid = true;
@@ -115,6 +116,17 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
     };
 
     const updatedOrder = await order.save();
+
+    try {
+      await sendEmail({
+        email: order.user.email,
+        subject: `Order Confirmation - Order #${order._id}`,
+        message: `Hi ${order.user.name},\n\nThank you for your order!\n\nYour payment has been successfully processed. Total: $${order.totalPrice}\n\nWe will notify you once it ships.`,
+      });
+    } catch (err) {
+      console.error('Email could not be sent', err);
+    }
+
     res.json(updatedOrder);
   } else {
     res.status(404);

@@ -30,3 +30,6 @@ uploads/*jpg
 
 # API tests
 http
+
+# project management
+IMPLEMENTATION_PLAN.md

@@ -1,6 +1,7 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import generateToken from '../utils/generateToken.js';
 import User from '../models/userModel.js';
+import sendEmail from '../utils/sendEmail.js';
 
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
@@ -46,6 +47,16 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (user) {
     generateToken(res, user._id);
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Welcome to ShopNest!',
+        message: `Hi ${user.name},\n\nWelcome to ShopNest! We're thrilled to have you on board.\n\nHappy Shopping!`,
+      });
+    } catch (err) {
+      console.error('Email could not be sent', err);
+    }
 
     res.status(201).json({
       _id: user._id,
