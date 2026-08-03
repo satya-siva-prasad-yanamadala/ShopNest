@@ -12,6 +12,11 @@ const authUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.matchPassword(password))) {
+    if (!user.isVerified) {
+      res.status(401);
+      throw new Error('Please verify your email address to log in');
+    }
+
     generateToken(res, user._id);
 
     res.json({
@@ -39,35 +44,87 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  // Code expires in 10 minutes
+  const verificationCodeExpire = new Date(Date.now() + 10 * 60 * 1000);
+
   const user = await User.create({
     name,
     email,
     password,
+    verificationCode,
+    verificationCodeExpire,
+    isVerified: false,
   });
 
   if (user) {
-    generateToken(res, user._id);
-
     try {
       await sendEmail({
         email: user.email,
-        subject: 'Welcome to ShopNest!',
-        message: `Hi ${user.name},\n\nWelcome to ShopNest! We're thrilled to have you on board.\n\nHappy Shopping!`,
+        subject: 'ShopNest - Verify Your Email',
+        message: `Hi ${user.name},\n\nYour verification code is: ${verificationCode}\n\nThis code will expire in 10 minutes.`,
       });
     } catch (err) {
       console.error('Email could not be sent', err);
     }
 
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
+      message: 'Verification email sent',
       email: user.email,
-      isAdmin: user.isAdmin,
     });
   } else {
     res.status(400);
     throw new Error('Invalid user data');
   }
+});
+
+// @desc    Verify user email
+// @route   POST /api/users/verify
+// @access  Public
+const verifyUser = asyncHandler(async (req, res) => {
+  const { email, code } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  if (user.isVerified) {
+    res.status(400);
+    throw new Error('User is already verified');
+  }
+
+  if (user.verificationCode !== code || user.verificationCodeExpire < Date.now()) {
+    res.status(400);
+    throw new Error('Invalid or expired verification code');
+  }
+
+  user.isVerified = true;
+  user.verificationCode = undefined;
+  user.verificationCodeExpire = undefined;
+
+  await user.save();
+
+  generateToken(res, user._id);
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Welcome to ShopNest!',
+      message: `Hi ${user.name},\n\nWelcome to ShopNest! We're thrilled to have you on board.\n\nHappy Shopping!`,
+    });
+  } catch (err) {
+    console.error('Email could not be sent', err);
+  }
+
+  res.status(200).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    isAdmin: user.isAdmin,
+  });
 });
 
 // @desc    Logout user / clear cookie
@@ -193,6 +250,7 @@ const updateUser = asyncHandler(async (req, res) => {
 export {
   authUser,
   registerUser,
+  verifyUser,
   logoutUser,
   getUserProfile,
   updateUserProfile,

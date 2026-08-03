@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Form, Button, Row, Col } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import Loader from '../components/Loader';
 import FormContainer from '../components/FormContainer';
-
+import Loader from '../components/Loader';
 import { useRegisterMutation } from '../slices/usersApiSlice';
-import { setCredentials } from '../slices/authSlice';
 import { toast } from 'react-toastify';
 
 const RegisterScreen = () => {
@@ -40,8 +38,8 @@ const RegisterScreen = () => {
     } else {
       try {
         const res = await register({ name, email, password }).unwrap();
-        dispatch(setCredentials({ ...res }));
-        navigate(redirect);
+        toast.success(res.message || 'Please check your email to verify your account');
+        navigate(`/verify?email=${email}&redirect=${redirect}`);
       } catch (err) {
         toast.error(err?.data?.message || err.error);
       }
