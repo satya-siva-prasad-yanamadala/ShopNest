@@ -3,6 +3,8 @@ import {
   authUser,
   registerUser,
   verifyUser,
+  forgotPassword,
+  resetPassword,
   logoutUser,
   getUserProfile,
   updateUserProfile,
@@ -19,6 +21,8 @@ router.route('/').post(registerUser).get(protect, admin, getUsers);
 router.post('/auth', authUser);
 router.post('/logout', logoutUser);
 router.post('/verify', verifyUser);
+router.post('/forgot-password', forgotPassword);
+router.put('/reset-password/:token', resetPassword);
 router
   .route('/profile')
   .get(protect, getUserProfile)

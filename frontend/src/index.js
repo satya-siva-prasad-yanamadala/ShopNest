@@ -24,6 +24,8 @@ import PaymentScreen from './screens/PaymentScreen';
 import PlaceOrderScreen from './screens/PlaceOrderScreen';
 import OrderScreen from './screens/OrderScreen';
 import VerifyScreen from './screens/VerifyScreen';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import OrderListScreen from './screens/admin/OrderListScreen';
 import ProductListScreen from './screens/admin/ProductListScreen';
@@ -49,6 +51,8 @@ const router = createBrowserRouter(
       <Route path='/login' element={<LoginScreen />} />
       <Route path='/register' element={<RegisterScreen />} />
       <Route path='/verify' element={<VerifyScreen />} />
+      <Route path='/forgot-password' element={<ForgotPasswordScreen />} />
+      <Route path='/reset-password/:token' element={<ResetPasswordScreen />} />
       
       {/* Registered users */}
       <Route path='' element={<PrivateRoute />}>
