@@ -17,7 +17,7 @@ const sendEmail = async (options) => {
     transporter = nodemailer.createTransport({
       host: hostIp,
       port: process.env.SMTP_PORT,
-      secure: false, // Set to true if port is 465
+      secure: String(process.env.SMTP_PORT) === '465', // True for 465, false for other ports
       tls: {
         servername: process.env.SMTP_HOST // Required for TLS certificate validation when using an IP
       },
