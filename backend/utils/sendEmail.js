@@ -7,6 +7,10 @@ const sendEmail = async (options) => {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
+      secure: false, // Set to true if port is 465
+      // The `family: 4` option tells Node.js to explicitly use IPv4 (A records)
+      // instead of IPv6 (AAAA records), which fixes the ENETUNREACH error on Render.
+      family: 4, 
       auth: {
         user: process.env.SMTP_EMAIL,
         pass: process.env.SMTP_PASSWORD,
