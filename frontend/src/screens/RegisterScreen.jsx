@@ -38,8 +38,18 @@ const RegisterScreen = () => {
     } else {
       try {
         const res = await register({ name, email, password }).unwrap();
-        toast.success(res.message || 'Please check your email to verify your account');
-        navigate(`/verify?email=${email}&redirect=${redirect}`);
+
+        if (res.smtpFailed) {
+          // Email could not be sent — user is auto-verified, redirect to login with demo info
+          toast.info(
+            `📧 Email service unavailable on this platform.\n\nYour account was auto-verified!\n\nYou can also use the demo credentials:\nEmail: ${res.demoEmail}\nPassword: ${res.demoPassword}`,
+            { autoClose: 12000, style: { whiteSpace: 'pre-line' } }
+          );
+          navigate(`/login?redirect=${redirect}`);
+        } else {
+          toast.success(res.message || 'Please check your email to verify your account');
+          navigate(`/verify?email=${email}&redirect=${redirect}`);
+        }
       } catch (err) {
         toast.error(err?.data?.message || err.error);
       }

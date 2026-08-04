@@ -46,7 +46,6 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-  // Code expires in 10 minutes
   const verificationCodeExpire = new Date(Date.now() + 10 * 60 * 1000);
 
   const user = await User.create({
@@ -59,14 +58,38 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
+    // Wrap email sending in a 20-second timeout
+    let emailSent = false;
     try {
-      await sendEmail({
-        email: user.email,
-        subject: 'ShopNest - Verify Your Email',
-        message: `Hi ${user.name},\n\nYour verification code is: ${verificationCode}\n\nThis code will expire in 10 minutes.`,
-      });
+      await Promise.race([
+        sendEmail({
+          email: user.email,
+          subject: 'ShopNest - Verify Your Email',
+          message: `Hi ${user.name},\n\nYour verification code is: ${verificationCode}\n\nThis code will expire in 10 minutes.`,
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('EMAIL_TIMEOUT')), 20000)
+        ),
+      ]);
+      emailSent = true;
     } catch (err) {
-      console.error('Email could not be sent', err);
+      console.error('Email could not be sent', err.message);
+    }
+
+    if (!emailSent) {
+      // SMTP failed or timed out — auto-verify the user so they can log in directly
+      user.isVerified = true;
+      user.verificationCode = undefined;
+      user.verificationCodeExpire = undefined;
+      await user.save();
+
+      return res.status(201).json({
+        smtpFailed: true,
+        message:
+          'SMTP is not supported on this platform. Your account has been auto-verified.',
+        demoEmail: 'admin@email.com',
+        demoPassword: '123456',
+      });
     }
 
     res.status(201).json({
