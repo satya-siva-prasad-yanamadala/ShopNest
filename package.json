@@ -12,6 +12,7 @@
     "data:import": "node backend/seeder",
     "data:destroy": "node backend/seeder -d",
     "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend",
+    "start:prod": "NODE_ENV=production node backend/server.js",
     "generate-toc": "markdown-toc -i readme.md"
   },
   "author": "Brad Traversy",
