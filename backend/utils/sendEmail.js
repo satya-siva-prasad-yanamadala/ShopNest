@@ -4,13 +4,23 @@ const sendEmail = async (options) => {
   // If no real SMTP credentials are provided, use ethereal email for testing
   let transporter;
   if (process.env.SMTP_HOST && process.env.SMTP_PORT) {
+    // Force IPv4 resolution manually to bypass any Node.js IPv6 quirks
+    const dns = await import('dns');
+    let hostIp = process.env.SMTP_HOST;
+    try {
+      const { address } = await dns.promises.lookup(process.env.SMTP_HOST, { family: 4 });
+      hostIp = address;
+    } catch (err) {
+      console.warn('Manual DNS IPv4 lookup failed, falling back to hostname', err);
+    }
+
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
+      host: hostIp,
       port: process.env.SMTP_PORT,
       secure: false, // Set to true if port is 465
-      // The `family: 4` option tells Node.js to explicitly use IPv4 (A records)
-      // instead of IPv6 (AAAA records), which fixes the ENETUNREACH error on Render.
-      family: 4, 
+      tls: {
+        servername: process.env.SMTP_HOST // Required for TLS certificate validation when using an IP
+      },
       auth: {
         user: process.env.SMTP_EMAIL,
         pass: process.env.SMTP_PASSWORD,
