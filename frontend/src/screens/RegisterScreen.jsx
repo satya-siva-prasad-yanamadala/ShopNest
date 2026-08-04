@@ -40,12 +40,8 @@ const RegisterScreen = () => {
         const res = await register({ name, email, password }).unwrap();
 
         if (res.smtpFailed) {
-          // Email could not be sent — user is auto-verified, redirect to login with demo info
-          toast.info(
-            `📧 Email service unavailable on this platform.\n\nYour account was auto-verified!\n\nYou can also use the demo credentials:\nEmail: ${res.demoEmail}\nPassword: ${res.demoPassword}`,
-            { autoClose: 12000, style: { whiteSpace: 'pre-line' } }
-          );
-          navigate(`/login?redirect=${redirect}`);
+          // Redirect to verify page with smtpFailed flag so it shows the inline explanation
+          navigate(`/verify?email=${email}&redirect=${redirect}&smtpFailed=true&demoEmail=${res.demoEmail}&demoPassword=${res.demoPassword}`);
         } else {
           toast.success(res.message || 'Please check your email to verify your account');
           navigate(`/verify?email=${email}&redirect=${redirect}`);
